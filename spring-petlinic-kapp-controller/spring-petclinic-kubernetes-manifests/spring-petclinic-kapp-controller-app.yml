@@ -1,0 +1,17 @@
+apiVersion: kappctrl.k14s.io/v1alpha1
+kind: App
+metadata:
+  name: spring-petclinic
+  namespace: spring-petclinic
+spec:
+  serviceAccountName: spring-petclinic-ns-sa
+  fetch:
+  - git:
+      url: https://github.com/ccollicutt/kapp-controller-apps.git
+      ref: origin/master
+      subPath: spring-petclinic
+  template:
+  - ytt: {}
+  - kbld: {}
+  deploy:
+  - kapp: {}

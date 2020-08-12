@@ -1,0 +1,33 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: spring-petclinic
+  name: spring-petclinic
+spec:
+  ports:
+  - port: 8080
+    targetPort: 8080
+  selector:
+    spring-petclinic: ""
+  type: LoadBalancer
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: spring-petclinic
+  name: spring-petclinic
+spec:
+  selector:
+    matchLabels:
+      spring-petclinic: ""
+  template:
+    metadata:
+      labels:
+        spring-petclinic: ""
+    spec:
+      containers:
+      - name: spring-petclinic
+        image: docker.io/ccollicutttanzu/spring-petclinic
+
+  
