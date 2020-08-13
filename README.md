@@ -1,5 +1,31 @@
 # Tanzu Build Service and Kapp Controller Workshop
 
+<!--ts-->
+   * [Tanzu Build Service and Kapp Controller Workshop](#tanzu-build-service-and-kapp-controller-workshop)
+      * [Overview](#overview)
+         * [About Tanzu Build Service](#about-tanzu-build-service)
+         * [About Kapp-controller](#about-kapp-controller)
+      * [Architecture Diagram](#architecture-diagram)
+      * [Requirements](#requirements)
+      * [Tested Software and Versions](#tested-software-and-versions)
+      * [Workshop](#workshop)
+         * [Clone Workshop Repository](#clone-workshop-repository)
+         * [Fork Spring Petclinic](#fork-spring-petclinic)
+         * [Use TBS to Build the Spring Petclinic Container Image](#use-tbs-to-build-the-spring-petclinic-container-image)
+            * [Install the TBS](#install-the-tbs)
+            * [Configure TBS to Build the Spring Petclinic Container Image from Source](#configure-tbs-to-build-the-spring-petclinic-container-image-from-source)
+            * [Review TBS Custom Resource Definitions](#review-tbs-custom-resource-definitions)
+         * [Use Kapp Controller to Deploy Spring Petclinic Application](#use-kapp-controller-to-deploy-spring-petclinic-application)
+            * [Install the Kapp Controller](#install-the-kapp-controller)
+            * [Configure Kapp Controller to Manage Spring Petclinic](#configure-kapp-controller-to-manage-spring-petclinic)
+            * [Review Kapp-controller Custom Resource Definitions](#review-kapp-controller-custom-resource-definitions)
+         * [All Together Now!](#all-together-now)
+            * [Update Spring Petclinic Code](#update-spring-petclinic-code)
+            * [Watch TBS and Kapp-controller Redeploy the Application](#watch-tbs-and-kapp-controller-redeploy-the-application)
+      * [Conclusion](#conclusion)
+      * [Clean Up](#clean-up)
+<!--te-->
+
 ## Overview
 
 The goal of this workshop is to combine the [Tanzu Build Service](https://tanzu.vmware.com/build-service) aka TBS (based on the upstream open source system [kpack](https://github.com/pivotal/kpack)) with the [kapp-controller](https://github.com/k14s/kapp-controller) to build images and automatically use those images in Kubernetes deployments. TBS builds the images from source and kapp-controller redeploys the apps based on those images.
@@ -30,6 +56,7 @@ Kapp-controller is part of the [k14s](https://k14s.io/) set of tools which take 
 1. TBS installed into that cluster, and is working
 2. A docker hub account
 3. A github account
+4. Assumes the use of a Linux terminal
 
 A Kubernetes cluster with load balancer support is not strictly necessary, but, for this workshop, the Spring Petclinic Kubernetes manifest is configured to use one.
 
@@ -52,10 +79,6 @@ Not required but convenient:
 * [Github CLI](https://github.com/cli/cli)
 
 ## Workshop
-
-### Install TBS
-
-For now, see [this blog post](https://tanzu.vmware.com/build-service). TBS is not yet GA, but when it is we will update these instructions to include installation. That said, if you follow the linked blog post you will be able to install TBS using Duffle.
 
 ### Clone Workshop Repository
 
@@ -105,6 +128,13 @@ From https://github.com/spring-projects/spring-petclinic
 ```
 
 ### Use TBS to Build the Spring Petclinic Container Image
+
+
+#### Install the TBS
+
+For now, see [this blog post](https://tanzu.vmware.com/build-service). TBS is not yet GA, but when it is we will update these instructions to include installation. That said, if you follow the linked blog post you will be able to install TBS using Duffle.
+
+#### Configure TBS to Build the Spring Petclinic Container Image from Source
 
 This assumes TBS has been installed and proper docker hub credentials have been configured. 
 
@@ -204,12 +234,34 @@ BUILD    STATUS     IMAGE                                                       
 2        SUCCESS    index.docker.io/ccollicutttanzu/spring-petclinic@sha256:52284241107dab9437574b6c392a36f5193d8b3f36bfe2176459779bff227225    2020-08-11 21:05:23    2020-08-11 21:07:28    TRIGGER
 ```
 
+#### Review TBS Custom Resource Definitions
 
-## Using Kapp Controller
+Take a second to review the Custom Resource Defintions that TBS creates.
+
+```
+kubectl get crd | grep pivotal | cut -f 1 -d " "
+```
+
+e.g. output:
+
+```
+$ kubectl get crd | grep pivotal | cut -f 1 -d " "
+builders.build.pivotal.io
+builds.build.pivotal.io
+clusterbuilders.build.pivotal.io
+custombuilders.experimental.kpack.pivotal.io
+customclusterbuilders.experimental.kpack.pivotal.io
+images.build.pivotal.io
+sourceresolvers.build.pivotal.io
+stacks.experimental.kpack.pivotal.io
+stores.experimental.kpack.pivotal.io
+```
+
+### Use Kapp Controller to Deploy Spring Petclinic Application
 
 Kapp-controller is a powerful tool. Read more about it and other related tools on the [k14s](https://k14s.io) website.
 
-### Install the Kapp Controller
+#### Install the Kapp Controller
 
 Deploy kapp-controller.
 
@@ -217,7 +269,7 @@ Deploy kapp-controller.
 kubectl create -f https://github.com/k14s/kapp-controller/releases/download/v0.9.0/release.yml
 ```
 
-### Configure Kapp Controller to Manage Spring Petclinic
+#### Configure Kapp Controller to Manage Spring Petclinic
 
 First, create a `spring-petclinic` namespace.
 
@@ -291,7 +343,41 @@ $ curl -s 10.3.1.147:8080 | grep -i welcome
 
 At this point we've ensured that both TBS and kapp-controller are working, and are setup to manage the Spring Petclinic application. 
 
-## All Together Now!
+#### Review Kapp-controller Custom Resource Definitions
+
+List the associated CRDs.
+
+```
+kubectl get crd | grep k14s | cut -f 1 -d " "
+```
+
+e.g. output:
+
+```
+$ kubectl get crd | grep k14s | cut -f 1 -d " "
+apps.kappctrl.k14s.io
+```
+
+Describe the CRD.
+
+```
+kubectl describe crd app
+```
+
+e.g. output:
+
+```
+$ kubectl describe crd app
+Name:         apps.kappctrl.k14s.io
+Namespace:    
+Labels:       <none>
+Annotations:  <none>
+API Version:  apiextensions.k8s.io/v1
+Kind:         CustomResourceDefinition
+SNIP!
+```
+
+### All Together Now!
 
 Now we'll update the Spring Petclinic code and push it to the github repo. 
 
@@ -301,7 +387,7 @@ kapp-controller will note the new image and redeploy the Kubernetes application,
 
 git push -> TBS builds image -> Kapp-controller redeploys application
 
-### Update Spring Petclinic Code
+#### Update Spring Petclinic Code
 
 ```
 cd /tmp
@@ -356,7 +442,9 @@ TBS should now pickup that new code and build a new image.
 
 *NOTE: It may take a minute or two to pickup the change.*
 
-List the builds.
+#### Watch TBS and Kapp-controller Redeploy the Application
+
+List the TBS builds.
 
 ```
 kp build list spring-petclinic
@@ -374,8 +462,6 @@ BUILD    STATUS      IMAGE                                                      
 ```
 
 Once the new image is pushed to docker hub, kapp-controller will redeploy the application.
-
-## kapp-controller
 
 Kapp-controller will find the new image and deploy it. Below we can see that the spring-petclinic pod is being recreated.
 
