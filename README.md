@@ -5,12 +5,16 @@
       * [Overview](#overview)
          * [About Tanzu Build Service](#about-tanzu-build-service)
          * [About Kapp-controller](#about-kapp-controller)
-      * [Architecture Diagram](#architecture-diagram)
-      * [Requirements](#requirements)
-      * [Tested Software and Versions](#tested-software-and-versions)
+         * [Architecture Diagram](#architecture-diagram)
+         * [Requirements](#requirements)
+         * [Tested Software and Versions](#tested-software-and-versions)
+         * [Conventions Used](#conventions-used)
       * [Workshop](#workshop)
          * [Clone Workshop Repository](#clone-workshop-repository)
          * [Fork Spring Petclinic](#fork-spring-petclinic)
+         * [Use Concourse as the Continuous Integration System](#use-concourse-as-the-continuous-integration-system)
+            * [Install Concourse](#install-concourse)
+            * [Configure Pipelines](#configure-pipelines)
          * [Use TBS to Build the Spring Petclinic Container Image](#use-tbs-to-build-the-spring-petclinic-container-image)
             * [Install the TBS](#install-the-tbs)
             * [Configure TBS to Build the Spring Petclinic Container Image from Source](#configure-tbs-to-build-the-spring-petclinic-container-image-from-source)
@@ -44,13 +48,13 @@ Kapp-controller is part of the [k14s](https://k14s.io/) set of tools which take 
 
 >kapp controller provides a way to specify which applications should run on your K8s cluster via one or more App CRs. It will install, and continiously apply updates.
 
-## Architecture Diagram
+### Architecture Diagram
 
 ![Achitecture Diagram](/img/arch.jpg)
 
 *NOTE: Github and Docker Hub are used in this workshop because they are easily accessible. Most container image registries and git repositories would also work just fine.*
 
-## Requirements
+### Requirements
 
 1. A kubernetes cluster that supports Kubernetes load balancers
 1. TBS installed into that cluster, and is working
@@ -62,7 +66,7 @@ A Kubernetes cluster with load balancer support is not strictly necessary, but, 
 
 *NOTE: You may want to create temporary accounts on docker hub and github, as your credentials will be used by TBS for both.*
 
-## Tested Software and Versions
+### Tested Software and Versions
 
 Required:
 
@@ -70,6 +74,7 @@ Required:
 * [Tanzu Kubernetes Grid Integrated edition - 1.7.1](https://network.pivotal.io/products/pivotal-container-service/)
 * [kapp-controller - 0.9.0](https://github.com/k14s/kapp-controller)
 * [Spring Petclinic](https://github.com/spring-projects/spring-petclinic)
+* [Helm - 3.3.0](https://github.com/helm/helm/releases/tag/v3.3.0)
 
 *NOTE: Both TBS and KC are moving fast. Likely this workshop is already out of date!*
 
@@ -77,6 +82,11 @@ Not required but convenient:
 
 * [kubens](https://github.com/ahmetb/kubectx)
 * [Github CLI](https://github.com/cli/cli)
+
+### Conventions Used
+
+* `SNIP!` - Some output removed for brevity
+* `kubectl` is often aliased to `k` for less typing, `alias k=kubectl`
 
 ## Workshop
 
@@ -126,6 +136,137 @@ From https://github.com/spring-projects/spring-petclinic
  * [new branch]      wavefront  -> upstream/wavefront
 ✓ Cloned fork
 ```
+
+### Use Concourse as the Continuous Integration System
+
+Concourse will be used as the glue that binds Spring Petclinic, Tanzu Build Service, and Kapp controller together. Concourse will take the commits, run the Spring Petclinic tests, and if the tests pass then promote the code changes to staging where TBS and Kapp controller will pick them up and deploy Spring Petclinic into Kubernetes.
+
+This section of the workshop is loosely based on [this Tanzu blog post](https://tanzu.vmware.com/developer/guides/ci-cd/concourse-gs/).
+
+#### Install Concourse
+
+Ensure that helm version 3 is available.
+
+```
+helm version
+```
+
+e.g. output:
+
+```
+$ helm version
+version.BuildInfo{Version:"v3.3.0-rc.2", GitCommit:"8a4aeec08d67a7b84472007529e8097ec3742105", GitTreeState:"dirty", GoVersion:"go1.14.6"}
+```
+
+Create a Concourse namespace.
+
+```
+kubectl create ns concourse
+```
+
+Configure the externalUrl for Concourse. This will be the URL used to access Concourse.
+
+*NOTE: This is required for proper authentiction.*
+
+e.g command, where you would replace "concourse.example.com" with your host name.
+
+```
+sed -i 's|CONCOURSE_HOSTNAME|concourse.example.com|' concourse/install/values.yml
+```
+
+We'd expect to see something like the below in the `values.yml` file after running that command.
+
+```
+$ grep externalUrl concourse/install/values.yml 
+    externalUrl: http://concourse.example.com:8080
+```
+
+Install concourse.
+
+*NOTE: This can take a few minutes to complete.*
+
+```
+helm install concourse concourse/concourse -f concourse/install/values.yml
+```
+
+e.g. output:
+
+```
+$ helm install concourse concourse/concourse -f concourse/install/values.yml
+NAME: concourse
+LAST DEPLOYED: Fri Aug 14 07:20:06 2020
+NAMESPACE: concourse
+STATUS: deployed
+REVISION: 1
+TEST SUITE: None
+NOTES:
+* Concourse can be accessed:
+
+  * Within your cluster, at the following DNS name at port 8080:
+
+    concourse-web.concourse.svc.cluster.local
+
+  * From outside the cluster, run these commands in the same shell:
+SNIP!
+```
+
+Once it has deployed there should be four pods running.
+
+```
+kubectl get pods
+```
+
+e.g. output:
+
+```
+$ k get pods
+NAME                             READY   STATUS    RESTARTS   AGE
+concourse-postgresql-0           1/1     Running   0          108s
+concourse-web-7dccf798cf-2chrn   1/1     Running   0          108s
+concourse-worker-0               1/1     Running   0          108s
+concourse-worker-1               1/1     Running   0          106s
+```
+
+And there should be a load balancer IP.
+
+```
+kubectl get svc
+```
+
+e.g output:
+
+```
+$ k get svc
+NAME                            TYPE           CLUSTER-IP       EXTERNAL-IP   PORT(S)          AGE
+concourse-postgresql            ClusterIP      10.100.200.137   <none>        5432/TCP         2m34s
+concourse-postgresql-headless   ClusterIP      None             <none>        5432/TCP         2m34s
+concourse-web                   LoadBalancer   10.100.200.203   10.3.1.155    8080:32009/TCP   2m34s
+concourse-web-worker-gateway    ClusterIP      10.100.200.79    <none>        2222/TCP         2m34s
+concourse-worker                ClusterIP      None             <none>        <none>           2m34s
+```
+
+Add the load balancer IP to DNS or `/etc/hosts`.
+
+```
+sudo echo "LOADBALANCER_IP CONCOURSE_HOSTNAME"
+```
+
+e.g command:
+
+```
+echo "10.3.1.155 concourse.example.com" | sudo tee -a /etc/hosts
+```
+
+Now access http://CONCOURSE_HOSTNAME:8080 in your browser and login with the username `test` and the password `test`.
+
+![concourse web interface](/img/concourse-web.jpg)
+
+Concourse is now installed! That was easy!
+
+
+#### Configure Pipelines
+
+
 
 ### Use TBS to Build the Spring Petclinic Container Image
 
@@ -491,6 +632,22 @@ In this demo we have set up TBS and Kapp-controller such that when a commit is m
 In real world production situations it's unlikely that the "latest" tag would be used to determine what is in production and the Spring Petclinic Kubernetes manifest would be updated with a specific, likely immutable, image tag. But, this workshop was not meant to mimic real-world situations, and instead give a basic introduction to TBS and Kapp-controller working together to deploy an application into Kubernetes.
 
 ## Clean Up
+
+Delete the concourse install.
+
+*NOTE: This will take a minute or two to complete. Once it does there should be no pods running in the concourse namespace.*
+
+```
+helm uninstall concourse
+```
+
+Remove the associated volume claims.
+
+```
+kubectl delete pvc concourse-work-dir-concourse-worker-0 -n concourse 
+kubectl delete pvc concourse-work-dir-concourse-worker-1 -n concourse
+kubectl delete pvc data-concourse-postgresql-0 -n concourse
+```
 
 Remove kapp-controller config for Spring Petclinic.
 
