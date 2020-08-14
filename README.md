@@ -3,6 +3,7 @@
 <!--ts-->
    * [Tanzu Build Service and Kapp Controller Workshop](#tanzu-build-service-and-kapp-controller-workshop)
       * [Overview](#overview)
+         * [About Concourse](#about-concourse)
          * [About Tanzu Build Service](#about-tanzu-build-service)
          * [About Kapp-controller](#about-kapp-controller)
          * [Architecture Diagram](#architecture-diagram)
@@ -10,10 +11,11 @@
          * [Tested Software and Versions](#tested-software-and-versions)
          * [Conventions Used](#conventions-used)
       * [Workshop](#workshop)
-         * [Clone Workshop Repository](#clone-workshop-repository)
-         * [Fork Spring Petclinic](#fork-spring-petclinic)
+         * [Clone the Workshop Repository](#clone-the-workshop-repository)
+         * [Fork the Spring Petclinic Application](#fork-the-spring-petclinic-application)
          * [Use Concourse as the Continuous Integration System](#use-concourse-as-the-continuous-integration-system)
             * [Install Concourse](#install-concourse)
+            * [Install Fly CLI](#install-fly-cli)
             * [Configure Pipelines](#configure-pipelines)
          * [Use TBS to Build the Spring Petclinic Container Image](#use-tbs-to-build-the-spring-petclinic-container-image)
             * [Install the TBS](#install-the-tbs)
@@ -36,9 +38,15 @@ The goal of this workshop is to combine the [Tanzu Build Service](https://tanzu.
 
 The goal of this short workshop is not to show what would happen in production, but rather how TBS and kapp-controller can work well together to manage Kubernetes applications, and to do so using Custom Resource Definitions (CRDs) that become part of the Kubernetes API. Thus, when building and deploying applications with TBS and kapp-controller it's actually all done through Kubernetes.
 
+### About Concourse
+
+[Concourse](https://concourse-ci.org/) is a continuous integration system that runs tasks in containers. Concourse pipelines are completely defined in YAML, there is no way to changes pipelines without altering YAML. Pipelines can be visualized in the Concourse Web interface.
+
+>Concourse is an open-source continuous thing-doer. Built on the simple mechanics of resources, tasks, and jobs, Concourse presents a general approach to automation that makes it great for CI/CD.
+
 ### About Tanzu Build Service
 
-Tanzu Build Service (TBS) allows you to build, maintain, and update portable OCI images.
+The [Tanzu Build Service](https://tanzu.vmware.com/build-service) (TBS) allows you to build, maintain, and update portable OCI images.
 
 >Consistently create production-ready container images that run on Kubernetes and across clouds. Automate source-to-container workflows across all your development frameworks.
 
@@ -75,6 +83,7 @@ Required:
 * [kapp-controller - 0.9.0](https://github.com/k14s/kapp-controller)
 * [Spring Petclinic](https://github.com/spring-projects/spring-petclinic)
 * [Helm - 3.3.0](https://github.com/helm/helm/releases/tag/v3.3.0)
+* git
 
 *NOTE: Both TBS and KC are moving fast. Likely this workshop is already out of date!*
 
@@ -90,7 +99,7 @@ Not required but convenient:
 
 ## Workshop
 
-### Clone Workshop Repository
+### Clone the Workshop Repository
 
 ```
 git clone https://github.com/ccollicutt/tanzu-build-service-and-kapp-controller-workshop
@@ -102,7 +111,7 @@ cd into the repository.
 cd tanzu-build-service-and-kapp-controller-workshop
 ```
 
-### Fork Spring Petclinic
+### Fork the Spring Petclinic Application
 
 This assumes you have the github cli, `gh`, installed, but can easily be done from the github web interface as well, of course.
 
@@ -139,7 +148,7 @@ From https://github.com/spring-projects/spring-petclinic
 
 ### Use Concourse as the Continuous Integration System
 
-Concourse will be used as the glue that binds Spring Petclinic, Tanzu Build Service, and Kapp controller together. Concourse will take the commits, run the Spring Petclinic tests, and if the tests pass then promote the code changes to staging where TBS and Kapp controller will pick them up and deploy Spring Petclinic into Kubernetes.
+Concourse will be used as the glue that binds Spring Petclinic, Tanzu Build Service, and Kapp controller together. Concourse will take the commits, run the Spring Petclinic tests, and if the tests pass then promote the code to staging where TBS and Kapp controller will pick them up and (re)deploy the new version of Spring Petclinic into Kubernetes.
 
 This section of the workshop is loosely based on [this Tanzu blog post](https://tanzu.vmware.com/developer/guides/ci-cd/concourse-gs/).
 
@@ -166,7 +175,7 @@ kubectl create ns concourse
 
 Configure the externalUrl for Concourse. This will be the URL used to access Concourse.
 
-*NOTE: This is required for proper authentiction.*
+*NOTE: This is required for proper authentication.*
 
 e.g command, where you would replace "concourse.example.com" with your host name.
 
@@ -263,10 +272,34 @@ Now access http://CONCOURSE_HOSTNAME:8080 in your browser and login with the use
 
 Concourse is now installed! That was easy!
 
+#### Install Fly CLI
+
+The `fly` CLI is used to interact with Concourse can be downloaded directly from the Concourse web interface.
+
+*NOTE: If you changed the hostname of the Concourse instance, ensure you also change it in the wget command. Please also note the quotes around the URL.*
+
+*NOTE: Other platform binaries are available, such as Windows and OSX. This example uses the Linux binary.*
+
+```
+wget "http://concourse.example.com:8080/api/v1/cli?arch=amd64&platform=linux" -O /usr/local/bin/fly
+```
+
+`fly` should now be available.
+
+```
+fly --version
+```
+
+e.g. output:
+
+```
+$ fly --version
+6.4.1
+```
 
 #### Configure Pipelines
 
-
+TBD
 
 ### Use TBS to Build the Spring Petclinic Container Image
 
