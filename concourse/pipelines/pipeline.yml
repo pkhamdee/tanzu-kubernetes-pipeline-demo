@@ -26,7 +26,7 @@ jobs:
     public: true
     serial: true
     plan:
-      - get: spring-petclinic-testing
+      - get: spring-petclinic-testing-branch
         trigger: true
 
       - get: test-scripts
@@ -40,9 +40,9 @@ jobs:
               repository: maven
               tag: 3-jdk-11-openj9
           inputs:
-            - name: spring-petclinic
+            - name: spring-petclinic-testing-branch
             - name: test-scripts
           run:
-            path: test-scripts/test-scripts/unit-test.sh
+            path: concourse/test-scripts/unit-test.sh
         on_success:
           put: spring-petclinic-staging-branch
