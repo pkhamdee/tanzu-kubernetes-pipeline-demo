@@ -18,7 +18,7 @@ resources:
     type: git
     source:
       uri: ((test-scripts-repo-uri))
-      branch: master
+      branch: with-concourse
 
 jobs:
 
