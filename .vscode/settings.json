@@ -1,0 +1,13 @@
+{
+    "emeraldwalk.runonsave": {
+
+    
+
+    "commands": [       
+        {
+            "match": "README.md",
+            "cmd": "gh-md-toc --insert --no-backup README.md"
+        }
+    ]
+    }
+}

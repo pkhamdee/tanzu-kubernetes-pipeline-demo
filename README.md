@@ -40,7 +40,7 @@ The goal of this short workshop is not to show what would happen in production, 
 
 ### About Concourse
 
-[Concourse](https://concourse-ci.org/) is a continuous integration system that runs tasks in containers. Concourse pipelines are completely defined in YAML, there is no way to changes pipelines without altering YAML. Pipelines can be visualized in the Concourse Web interface.
+[Concourse](https://concourse-ci.org/) is a continuous integration system that runs tasks in containers. Concourse pipelines are completely defined in YAML, there is no way to changes pipelines without altering YAML, i.e the pipelines are code. Pipelines can be visualized in the Concourse Web interface.
 
 >Concourse is an open-source continuous thing-doer. Built on the simple mechanics of resources, tasks, and jobs, Concourse presents a general approach to automation that makes it great for CI/CD.
 
@@ -299,7 +299,57 @@ $ fly --version
 
 #### Configure Pipelines
 
-TBD
+Login to Concourse.
+
+```
+fly --target demo login --concourse-url http://concourse.example.com:8080 -u test -p test
+```
+
+e.g. output:
+
+```
+$ fly --target demo login --concourse-url http://concourse.example.com:8080 -u test -p test
+logging in to team 'main'
+
+
+target saved
+```
+
+Push to the testing branch of your spring-petclinic.
+
+```
+curtis@acheron:/tmp/spring-petclinic$ git checkout -b testing
+Switched to a new branch 'testing'
+curtis@acheron:/tmp/spring-petclinic$ git push origin testing
+Total 0 (delta 0), reused 0 (delta 0)
+remote: 
+remote: Create a pull request for 'testing' on GitHub by visiting:
+remote:      https://github.com/ccollicutt/spring-petclinic/pull/new/testing
+remote: 
+To github.com:ccollicutt/spring-petclinic.git
+ * [new branch]      testing -> testing
+```
+
+Also push to the staging branch.
+
+```
+$ git checkout -b staging
+Switched to a new branch 'testing'
+$ git push origin staging
+```
+
+
+Edit the `concourse/pipelines/credentials.yml` file to point to your repositories.
+
+```
+cp concourse/pipelins/credentials.yml.example concourse/pipelins/credentials.yml
+``` 
+
+Create the pipeline.
+
+```
+fly -t demo set-pipeline -c concourse/pipelines/pipeline.yml -p petclinic-tests -l concourse/pipelines/credentials.yml
+```
 
 ### Use TBS to Build the Spring Petclinic Container Image
 

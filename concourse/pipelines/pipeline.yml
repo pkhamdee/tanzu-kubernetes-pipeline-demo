@@ -13,6 +13,9 @@ resources:
     source:
       uri: ((spring-petclinic-repo-uri))
       branch: staging
+      username: ((github-apptoken))
+      password: x-oauth-basic
+
 
   - name: test-scripts
     type: git
