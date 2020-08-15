@@ -21,7 +21,4 @@ secrets:
 web:
   service:
     api:
-      ## For minikube, set this to ClusterIP, elsewhere use LoadBalancer or NodePort
-      ## Ref: https://kubernetes.io/docs/user-guide/services/#publishing-services---service-types
-      ##
       type: LoadBalancer
