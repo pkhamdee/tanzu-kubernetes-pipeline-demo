@@ -43,6 +43,6 @@ jobs:
             - name: spring-petclinic-testing-branch
             - name: test-scripts
           run:
-            path: concourse/test-scripts/unit-test.sh
+            path: test-scripts/concourse/test-scripts/unit-test.sh
         on_success:
           put: spring-petclinic-staging-branch
