@@ -1,5 +1,5 @@
 #! /bin/bash
 
-cd spring-petclinic
+cd spring-petclinic-testing-branch
 
 mvn test
