@@ -47,6 +47,7 @@ jobs:
           run:
             path: test-scripts/concourse/test-scripts/unit-test.sh
         on_success:
-          put: spring-petclinic-staging-branch
-            params: 
-              repository: spring-petclinic-testing-branch
+          do:
+            - put: spring-petclinic-staging-branch
+              params:
+                repository: spring-petclinic-testing-branch
