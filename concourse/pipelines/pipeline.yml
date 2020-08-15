@@ -29,6 +29,8 @@ jobs:
       - get: spring-petclinic-testing-branch
         trigger: true
 
+      - get: spring-petclinic-staging-branch
+
       - get: test-scripts
 
       - task: run-mvn-test
