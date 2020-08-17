@@ -6,16 +6,17 @@ resources:
     type: git
     source:
       uri: ((spring-petclinic-repo-uri))
+      icon: github
       branch: testing
 
   - name: spring-petclinic-staging-branch
     type: git
     source:
       uri: ((spring-petclinic-repo-uri))
+      icon: github
       branch: staging
       username: ((github-apptoken))
       password: x-oauth-basic
-
 
   - name: test-scripts
     type: git

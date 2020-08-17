@@ -11,14 +11,16 @@
          * [Tested Software and Versions](#tested-software-and-versions)
          * [Conventions Used](#conventions-used)
       * [Workshop](#workshop)
-         * [Clone the Workshop Repository](#clone-the-workshop-repository)
-         * [Fork the Spring Petclinic Application](#fork-the-spring-petclinic-application)
+         * [Fork and Clone the Workshop Repository](#fork-and-clone-the-workshop-repository)
+         * [Fork and Clone the Spring Petclinic Application](#fork-and-clone-the-spring-petclinic-application)
          * [Use Concourse as the Continuous Integration System](#use-concourse-as-the-continuous-integration-system)
             * [Install Concourse](#install-concourse)
             * [Install Fly CLI](#install-fly-cli)
-            * [Configure Pipelines](#configure-pipelines)
+            * [Create a Github Personal Access Token](#create-a-github-personal-access-token)
+            * [Create Concourse Credentials File](#create-concourse-credentials-file)
+            * [Configure and Test the Concourse Pipeline](#configure-and-test-the-concourse-pipeline)
          * [Use TBS to Build the Spring Petclinic Container Image](#use-tbs-to-build-the-spring-petclinic-container-image)
-            * [Install the TBS](#install-the-tbs)
+            * [Install the Tanzu Build Service](#install-the-tanzu-build-service)
             * [Configure TBS to Build the Spring Petclinic Container Image from Source](#configure-tbs-to-build-the-spring-petclinic-container-image-from-source)
             * [Review TBS Custom Resource Definitions](#review-tbs-custom-resource-definitions)
          * [Use Kapp Controller to Deploy Spring Petclinic Application](#use-kapp-controller-to-deploy-spring-petclinic-application)
@@ -26,7 +28,7 @@
             * [Configure Kapp Controller to Manage Spring Petclinic](#configure-kapp-controller-to-manage-spring-petclinic)
             * [Review Kapp-controller Custom Resource Definitions](#review-kapp-controller-custom-resource-definitions)
          * [All Together Now!](#all-together-now)
-            * [Update Spring Petclinic Code](#update-spring-petclinic-code)
+            * [Update Spring Petclinic Code and Let Concourse Run Tests](#update-spring-petclinic-code-and-let-concourse-run-tests)
             * [Watch TBS and Kapp-controller Redeploy the Application](#watch-tbs-and-kapp-controller-redeploy-the-application)
       * [Conclusion](#conclusion)
       * [Clean Up](#clean-up)
@@ -34,19 +36,24 @@
 
 ## Overview
 
-The goal of this workshop is to combine the [Tanzu Build Service](https://tanzu.vmware.com/build-service) aka TBS (based on the upstream open source system [kpack](https://github.com/pivotal/kpack)) with the [kapp-controller](https://github.com/k14s/kapp-controller) to build images and automatically use those images in Kubernetes deployments. TBS builds the images from source and kapp-controller redeploys the apps based on those images.
+The goal of this workshop is to combine the [Tanzu Build Service](https://tanzu.vmware.com/build-service) aka TBS (based on the upstream open source system [kpack](https://github.com/pivotal/kpack)) and [buildpacks](https://buildpacks.io) with the [kapp-controller](https://github.com/k14s/kapp-controller), part of the [k14s](https://k14s.io) set of tools, to:
 
-The goal of this short workshop is not to show what would happen in production, but rather how TBS and kapp-controller can work well together to manage Kubernetes applications, and to do so using Custom Resource Definitions (CRDs) that become part of the Kubernetes API. Thus, when building and deploying applications with TBS and kapp-controller it's actually all done through Kubernetes.
+1. Run test on code commited to a testing branch
+1. If the code passes the tests push it to staging
+1. TBS will pick up the changes in the staging branch and build an image 
+1. Kapp-controller will redeploy the application based on that image
+
+The goal of this short workshop is to show how Concourse, TBS and kapp-controller can work together to manage Kubernetes applications, and to do so using Custom Resource Definitions (CRDs) that become part of the Kubernetes API. Thus, when building and deploying applications with TBS and kapp-controller it's actually all done through Kubernetes.
 
 ### About Concourse
 
-[Concourse](https://concourse-ci.org/) is a continuous integration system that runs tasks in containers. Concourse pipelines are completely defined in YAML, there is no way to changes pipelines without altering YAML, i.e the pipelines are code. Pipelines can be visualized in the Concourse Web interface.
+[Concourse](https://concourse-ci.org/) is an open source continuous integration system that runs tasks in containers. Concourse pipelines are completely defined in YAML, there is no way to changes pipelines without altering YAML, i.e the pipelines are code. Pipelines can be visualized in the Concourse Web interface.
 
 >Concourse is an open-source continuous thing-doer. Built on the simple mechanics of resources, tasks, and jobs, Concourse presents a general approach to automation that makes it great for CI/CD.
 
 ### About Tanzu Build Service
 
-The [Tanzu Build Service](https://tanzu.vmware.com/build-service) (TBS) allows you to build, maintain, and update portable OCI images.
+The [Tanzu Build Service](https://tanzu.vmware.com/build-service) (TBS) is a commercial product based on the upstream open source systems kpack and buildpacks, and allows you to build, maintain, and update portable OCI images. Because the resulting images are based on [buildpacks](https://buildpacks.io) organizations can easily govern their container images.
 
 >Consistently create production-ready container images that run on Kubernetes and across clouds. Automate source-to-container workflows across all your development frameworks.
 
@@ -60,11 +67,12 @@ Kapp-controller is part of the [k14s](https://k14s.io/) set of tools which take 
 
 ![Achitecture Diagram](/img/arch.jpg)
 
-*NOTE: Github and Docker Hub are used in this workshop because they are easily accessible. Most container image registries and git repositories would also work just fine.*
+*NOTE: Github and Docker Hub are used in this workshop because they are public and easily accessible. Most container image registries and git repositories would also work just fine.*
 
 ### Requirements
 
 1. A kubernetes cluster that supports Kubernetes load balancers
+1. The Kubernetes cluster must also have a default storage class
 1. TBS installed into that cluster, and is working
 2. A docker hub account
 3. A github account
@@ -79,7 +87,7 @@ A Kubernetes cluster with load balancer support is not strictly necessary, but, 
 Required:
 
 * [TBS - 0.2.0](https://network.pivotal.io/products/build-service/) (not yet GA, but very soon)
-* [Tanzu Kubernetes Grid Integrated edition - 1.7.1](https://network.pivotal.io/products/pivotal-container-service/)
+* [Tanzu Kubernetes Grid Integrated edition - 1.7.1](https://network.pivotal.io/products/pivotal-container-service/) - Provides Kubernetes 1.16.7
 * [kapp-controller - 0.9.0](https://github.com/k14s/kapp-controller)
 * [Spring Petclinic](https://github.com/spring-projects/spring-petclinic)
 * [Helm - 3.3.0](https://github.com/helm/helm/releases/tag/v3.3.0)
@@ -99,10 +107,14 @@ Not required but convenient:
 
 ## Workshop
 
-### Clone the Workshop Repository
+### Fork and Clone the Workshop Repository
 
 ```
-git clone https://github.com/ccollicutt/tanzu-build-service-and-kapp-controller-workshop
+gh repo fork ccollicutt/tanzu-build-service-and-kapp-controller-workshop --clone
+```
+
+```
+git clone https://github.com/YOUR_GITHUB_USERNAME/tanzu-build-service-and-kapp-controller-workshop
 ```
 
 cd into the repository.
@@ -111,7 +123,7 @@ cd into the repository.
 cd tanzu-build-service-and-kapp-controller-workshop
 ```
 
-### Fork the Spring Petclinic Application
+### Fork and Clone the Spring Petclinic Application
 
 This assumes you have the github cli, `gh`, installed, but can easily be done from the github web interface as well, of course.
 
@@ -146,6 +158,63 @@ From https://github.com/spring-projects/spring-petclinic
 ✓ Cloned fork
 ```
 
+Clone that fork.
+
+```
+git clone git@github.com:YOUR_GITHUB_USERNAME/spring-petclinic.git
+```
+
+e.g. command:
+
+```
+$ git clone git@github.com:ccollicutt/spring-petclinic.git
+Cloning into 'spring-petclinic'...
+remote: Enumerating objects: 8498, done.
+remote: Total 8498 (delta 0), reused 0 (delta 0), pack-reused 8498
+Receiving objects: 100% (8498/8498), 7.26 MiB | 7.68 MiB/s, done.
+Resolving deltas: 100% (3229/3229), done.
+```
+
+Change directories into spring-petclinic.
+
+```
+cd spring-petclinic
+```
+
+Create testing and staging branches in your forked Spring Petclinic repository.
+
+*NOTE: Without the testing and staging branches setup, Concourse won't be able to pull them into the pipeline.*
+
+```
+git checkout -b testing
+git push origin testing
+git checkout -b staging
+git push origin staging
+```
+
+e.g. output:
+
+```
+$ git push origin testing
+Total 0 (delta 0), reused 0 (delta 0)
+remote: 
+remote: Create a pull request for 'testing' on GitHub by visiting:
+remote:      https://github.com/ccollicutt/spring-petclinic/pull/new/testing
+remote: 
+To github.com:ccollicutt/spring-petclinic.git
+ * [new branch]      testing -> testing
+$ git checkout -b staging
+Switched to a new branch 'staging'
+$ git push origin staging
+Total 0 (delta 0), reused 0 (delta 0)
+remote: 
+remote: Create a pull request for 'staging' on GitHub by visiting:
+remote:      https://github.com/ccollicutt/spring-petclinic/pull/new/staging
+remote: 
+To github.com:ccollicutt/spring-petclinic.git
+ * [new branch]      staging -> staging
+```
+
 ### Use Concourse as the Continuous Integration System
 
 Concourse will be used as the glue that binds Spring Petclinic, Tanzu Build Service, and Kapp controller together. Concourse will take the commits, run the Spring Petclinic tests, and if the tests pass then promote the code to staging where TBS and Kapp controller will pick them up and (re)deploy the new version of Spring Petclinic into Kubernetes.
@@ -167,10 +236,17 @@ $ helm version
 version.BuildInfo{Version:"v3.3.0-rc.2", GitCommit:"8a4aeec08d67a7b84472007529e8097ec3742105", GitTreeState:"dirty", GoVersion:"go1.14.6"}
 ```
 
-Create a Concourse namespace.
+Create a Concourse namespace and switch to that context.
 
 ```
 kubectl create ns concourse
+kubens concourse
+```
+
+Copy the example `concourse/install/values.yml.example` file.
+
+```
+cp concourse/install/values.yml.example concourse/install/values.yml
 ```
 
 Configure the externalUrl for Concourse. This will be the URL used to access Concourse.
@@ -254,10 +330,12 @@ concourse-web-worker-gateway    ClusterIP      10.100.200.79    <none>        22
 concourse-worker                ClusterIP      None             <none>        <none>           2m34s
 ```
 
-Add the load balancer IP to DNS or `/etc/hosts`.
+Add the load balancer IP to DNS or `/etc/hosts`. Replace the IP and hostname with your own respectively.
+
+*NOTE: If you are running this in a corporate lab, the DNS entries could be added to the lab DNS server with an appropriate hostname.*
 
 ```
-sudo echo "LOADBALANCER_IP CONCOURSE_HOSTNAME"
+echo "LOADBALANCER_IP CONCOURSE_HOSTNAME" | sudo tee -a /etc/hosts
 ```
 
 e.g command:
@@ -267,6 +345,8 @@ echo "10.3.1.155 concourse.example.com" | sudo tee -a /etc/hosts
 ```
 
 Now access http://CONCOURSE_HOSTNAME:8080 in your browser and login with the username `test` and the password `test`.
+
+*NOTE: As this is just a workshop there is no https access configured.*
 
 ![concourse web interface](/img/concourse-web.jpg)
 
@@ -297,7 +377,33 @@ $ fly --version
 6.4.1
 ```
 
-#### Configure Pipelines
+#### Create a Github Personal Access Token
+
+Go to:
+
+```
+github -> settings -> developer settings -> personal access tokens -> generate new token
+```
+
+Call it something like `pipeline workshop` and give it all "repo" permissions as show below. 
+
+![personal access token settings](/img/personal-access-token-permissions.jpg)
+
+Copy that token as it will be used in the Concourse credentials file.
+
+#### Create Concourse Credentials File
+
+Copy the example file.
+
+```
+cp concourse/pipelines/credentials.yml.example concourse/pipelines/credentials.yml
+```
+
+Edit that file and change the github repository user name and add in the personal access token from github.
+
+#### Configure and Test the Concourse Pipeline
+
+Now that Concourse is running, a pipeline can be initialized.
 
 Login to Concourse.
 
@@ -315,48 +421,70 @@ logging in to team 'main'
 target saved
 ```
 
-Push to the testing branch of your spring-petclinic.
-
-```
-curtis@acheron:/tmp/spring-petclinic$ git checkout -b testing
-Switched to a new branch 'testing'
-curtis@acheron:/tmp/spring-petclinic$ git push origin testing
-Total 0 (delta 0), reused 0 (delta 0)
-remote: 
-remote: Create a pull request for 'testing' on GitHub by visiting:
-remote:      https://github.com/ccollicutt/spring-petclinic/pull/new/testing
-remote: 
-To github.com:ccollicutt/spring-petclinic.git
- * [new branch]      testing -> testing
-```
-
-Also push to the staging branch.
-
-```
-$ git checkout -b staging
-Switched to a new branch 'testing'
-$ git push origin staging
-```
-
-
-Edit the `concourse/pipelines/credentials.yml` file to point to your repositories.
-
-```
-cp concourse/pipelins/credentials.yml.example concourse/pipelins/credentials.yml
-``` 
-
 Create the pipeline.
+
+*NOTE: fly will check if you want to make changes to the pipeline. Select yes.*
 
 ```
 fly -t demo set-pipeline -c concourse/pipelines/pipeline.yml -p petclinic-tests -l concourse/pipelines/credentials.yml
 ```
 
+Unpause the pipeline. All pipelines start out paused.
+
+```
+fly -t demo unpause-pipeline -p petclinic-tests
+```
+
+Run the pipeline.
+
+*NOTE: The maven tests can take ~20 minutes to run.*
+
+```
+fly -t demo trigger-job -j petclinic-tests/maven-test
+```
+
+e.g. output:
+
+```
+$ fly -t demo trigger-job -j petclinic-tests/maven-test
+started petclinic-tests/maven-test #1
+```
+
+To show the pipeline visually access this URL:
+
+```
+http://YOUR_CONCOURSE_HOSTNAME:8080/teams/main/pipelines/petclinic-tests
+```
+
+If you click on the pipeline you should be brought to a page similar to the below.
+
+![concourse maven test pipeline](/img/concourse-maven-test.jpg)
+
+Watch the pipeline logs.
+
+```
+fly -t demo watch -j petclinic-tests/maven-test
+```
+
+e.g. output:
+
+```
+$ fly -t demo watch -j petclinic-tests/maven-test
+Cloning into '/tmp/build/get'...
+9412569 welcome concourse
+Cloning into '/tmp/build/get'...
+9412569 welcome concourse
+initializing
+running test-scripts/concourse/test-scripts/unit-test.sh
+Everything up-to-date
+succeeded
+```
+
 ### Use TBS to Build the Spring Petclinic Container Image
 
+#### Install the Tanzu Build Service
 
-#### Install the TBS
-
-For now, see [this blog post](https://tanzu.vmware.com/build-service). TBS is not yet GA, but when it is we will update these instructions to include installation. That said, if you follow the linked blog post you will be able to install TBS using Duffle.
+Follow the [Tanzu Build Service install instructions](https://docs.pivotal.io/build-service/1-0/installing.html#pks-install) for installing on TKGI.
 
 #### Configure TBS to Build the Spring Petclinic Container Image from Source
 
@@ -442,7 +570,6 @@ BUILD    STATUS     IMAGE                                                       
 
 ```
 
-
 We can also force a rebuild with the `trigger` option.
 
 ```
@@ -460,7 +587,7 @@ BUILD    STATUS     IMAGE                                                       
 
 #### Review TBS Custom Resource Definitions
 
-Take a second to review the Custom Resource Defintions that TBS creates.
+Take a second to review the Custom Resource Definitions that TBS creates.
 
 ```
 kubectl get crd | grep pivotal | cut -f 1 -d " "
@@ -611,17 +738,25 @@ kapp-controller will note the new image and redeploy the Kubernetes application,
 
 git push -> TBS builds image -> Kapp-controller redeploys application
 
-#### Update Spring Petclinic Code
+#### Update Spring Petclinic Code and Let Concourse Run Tests
+
+Change directories to where ever you cloned Spring Petclinic.
+
+Ensure you are on the testing branch that was created earlier.
 
 ```
-cd /tmp
-git clone https://github.com/YOUR_GITHUB_USER/spring-petclinic.git
+git checkout testing
 ```
 
-e.g output:
+e.g. output:
 
 ```
-git clone https://github.com/ccollicutt/spring-petclinic
+$ git checkout testing
+Switched to branch 'testing'
+$ git branch
+  main
+  staging
+* testing
 ```
 
 Alter the welcome message.
@@ -654,17 +789,17 @@ index 173417a..6928b26 100644
 
 Push that change.
 
-*NOTE: Remember main!*
-
 ```
 git add .
 git commit -m "change welcome message"
-git push -u origin main
+git push -u origin testing
 ```
 
-TBS should now pickup that new code and build a new image.
+Concourse should pickup that change and run the `maven-test` pipeline.
 
 *NOTE: It may take a minute or two to pickup the change.*
+
+![concourse picks up change](/img/concourse-build-2.jpg)
 
 #### Watch TBS and Kapp-controller Redeploy the Application
 
@@ -710,7 +845,7 @@ $ curl -s 10.3.1.147:8080  | grep -i welcome
 
 ## Conclusion
 
-In this demo we have set up TBS and Kapp-controller such that when a commit is made to Spring Petclinic on the main branch it a new image will be built and deployed automatically, using Kubernetes Custom Resource Definitions. 
+In this demo we have set up Concourse, TBS, and Kapp-controller such that when a commit is made to Spring Petclinic on the testing branch it's tested, and if the tests pass merged onto staging, at which point a new image will be built and deployed automatically.
 
 In real world production situations it's unlikely that the "latest" tag would be used to determine what is in production and the Spring Petclinic Kubernetes manifest would be updated with a specific, likely immutable, image tag. But, this workshop was not meant to mimic real-world situations, and instead give a basic introduction to TBS and Kapp-controller working together to deploy an application into Kubernetes.
 

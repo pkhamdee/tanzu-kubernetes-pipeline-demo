@@ -1,1 +1,2 @@
 concourse/pipelines/credentials.yml
+kubeapps/
