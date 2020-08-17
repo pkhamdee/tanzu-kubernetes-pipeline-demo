@@ -1,7 +1,7 @@
-# Tanzu Build Service and Kapp Controller Workshop
+# Tanzu Kubernetes Pipeline Demo
 
 <!--ts-->
-   * [Tanzu Build Service and Kapp Controller Workshop](#tanzu-build-service-and-kapp-controller-workshop)
+   * [Tanzu Kubernetes Pipeline Demo](#tanzu-kubernetes-pipeline-demo)
       * [Overview](#overview)
          * [About Concourse](#about-concourse)
          * [About Tanzu Build Service](#about-tanzu-build-service)
