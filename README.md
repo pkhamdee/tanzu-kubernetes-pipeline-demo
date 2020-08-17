@@ -11,8 +11,8 @@
          * [Tested Software and Versions](#tested-software-and-versions)
          * [Conventions Used](#conventions-used)
       * [Workshop](#workshop)
-         * [Fork and Clone the Workshop Repository](#fork-and-clone-the-workshop-repository)
          * [Fork and Clone the Spring Petclinic Application](#fork-and-clone-the-spring-petclinic-application)
+         * [Fork and Clone the Workshop Repository](#fork-and-clone-the-workshop-repository)
          * [Use Concourse as the Continuous Integration System](#use-concourse-as-the-continuous-integration-system)
             * [Install Concourse](#install-concourse)
             * [Install Fly CLI](#install-fly-cli)
@@ -107,22 +107,6 @@ Not required but convenient:
 
 ## Workshop
 
-### Fork and Clone the Workshop Repository
-
-```
-gh repo fork ccollicutt/tanzu-build-service-and-kapp-controller-workshop --clone
-```
-
-```
-git clone https://github.com/YOUR_GITHUB_USERNAME/tanzu-build-service-and-kapp-controller-workshop
-```
-
-cd into the repository.
-
-```
-cd tanzu-build-service-and-kapp-controller-workshop
-```
-
 ### Fork and Clone the Spring Petclinic Application
 
 This assumes you have the github cli, `gh`, installed, but can easily be done from the github web interface as well, of course.
@@ -213,6 +197,22 @@ remote:      https://github.com/ccollicutt/spring-petclinic/pull/new/staging
 remote: 
 To github.com:ccollicutt/spring-petclinic.git
  * [new branch]      staging -> staging
+```
+
+### Fork and Clone the Workshop Repository
+
+```
+gh repo fork ccollicutt/tanzu-build-service-and-kapp-controller-workshop --clone
+```
+
+```
+git clone https://github.com/YOUR_GITHUB_USERNAME/tanzu-build-service-and-kapp-controller-workshop
+```
+
+cd into the repository.
+
+```
+cd tanzu-build-service-and-kapp-controller-workshop
 ```
 
 ### Use Concourse as the Continuous Integration System
@@ -312,7 +312,7 @@ concourse-worker-0               1/1     Running   0          108s
 concourse-worker-1               1/1     Running   0          106s
 ```
 
-And there should be a load balancer IP.
+And there should be a load balancer IP for the `concourse-web` service.
 
 ```
 kubectl get svc
