@@ -59,7 +59,7 @@ The [Tanzu Build Service](https://tanzu.vmware.com/build-service) (TBS) is a com
 
 ### About Kapp-controller
 
-Kapp-controller is part of the [k14s](https://k14s.io/) set of tools which take a modular approach to managing modern applications in container environments.
+[Kapp-controller](https://github.com/k14s/kapp-controller) is part of the [k14s](https://k14s.io/) set of tools which take a modular approach to managing modern applications in container environments.
 
 >kapp controller provides a way to specify which applications should run on your K8s cluster via one or more App CRs. It will install, and continiously apply updates.
 
@@ -202,17 +202,17 @@ To github.com:ccollicutt/spring-petclinic.git
 ### Fork and Clone the Workshop Repository
 
 ```
-gh repo fork ccollicutt/tanzu-build-service-and-kapp-controller-workshop --clone
+gh repo fork ccollicutt/tanzu-kubernetes-pipeline-demo --clone
 ```
 
 ```
-git clone https://github.com/YOUR_GITHUB_USERNAME/tanzu-build-service-and-kapp-controller-workshop
+git clone https://github.com/YOUR_GITHUB_USERNAME/tanzu-kubernetes-pipeline-demo
 ```
 
 cd into the repository.
 
 ```
-cd tanzu-build-service-and-kapp-controller-workshop
+cd tanzu-kubernetes-pipeline-demo
 ```
 
 ### Use Concourse as the Continuous Integration System
