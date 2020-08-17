@@ -6,7 +6,7 @@
          * [About Concourse](#about-concourse)
          * [About Tanzu Build Service](#about-tanzu-build-service)
          * [About Kapp-controller](#about-kapp-controller)
-         * [Architecture Diagram](#architecture-diagram)
+         * [Pipeline Diagram](#pipeline-diagram)
          * [Requirements](#requirements)
          * [Tested Software and Versions](#tested-software-and-versions)
          * [Conventions Used](#conventions-used)
@@ -63,7 +63,7 @@ The [Tanzu Build Service](https://tanzu.vmware.com/build-service) (TBS) is a com
 
 >kapp controller provides a way to specify which applications should run on your K8s cluster via one or more App CRs. It will install, and continiously apply updates.
 
-### Architecture Diagram
+### Pipeline Diagram
 
 ![Achitecture Diagram](/img/arch.jpg)
 
