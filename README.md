@@ -234,7 +234,7 @@ cd tanzu-kubernetes-pipeline-demo
 
 ### Use Concourse as the Continuous Integration System
 
-Concourse will be used as the glue that binds Spring Petclinic, Tanzu Build Service, and Kapp controller together. Concourse will take the commits, run the Spring Petclinic tests, and if the tests pass then promote the code to staging where TBS and Kapp controller will pick them up and (re)deploy the new version of Spring Petclinic into Kubernetes.
+Concourse will take the commits, run the Spring Petclinic tests, and if the tests pass then promote the code to staging where TBS and Kapp controller will pick them up and (re)deploy the new version of Spring Petclinic into Kubernetes.
 
 This section of the workshop is loosely based on [this Tanzu blog post](https://tanzu.vmware.com/developer/guides/ci-cd/concourse-gs/).
 
