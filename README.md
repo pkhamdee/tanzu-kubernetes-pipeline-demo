@@ -12,7 +12,7 @@
             * [Install the gh CLI](#install-the-gh-cli)
          * [Conventions Used](#conventions-used)
       * [Workshop](#workshop)
-            * [Create a Github Personal Access Token](#create-a-github-personal-access-token)
+         * [Create a Github Personal Access Token](#create-a-github-personal-access-token)
          * [Fork and Clone the Spring Petclinic Application](#fork-and-clone-the-spring-petclinic-application)
          * [Fork and Clone the Workshop Repository](#fork-and-clone-the-workshop-repository)
          * [Use Concourse as the Continuous Integration System](#use-concourse-as-the-continuous-integration-system)
@@ -125,7 +125,7 @@ $ which gh
 
 ## Workshop
 
-#### Create a Github Personal Access Token
+### Create a Github Personal Access Token
 
 Go to:
 
