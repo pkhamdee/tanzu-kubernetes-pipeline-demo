@@ -9,14 +9,15 @@
          * [Pipeline Diagram](#pipeline-diagram)
          * [Requirements](#requirements)
          * [Tested Software and Versions](#tested-software-and-versions)
+            * [Install the gh CLI](#install-the-gh-cli)
          * [Conventions Used](#conventions-used)
       * [Workshop](#workshop)
+            * [Create a Github Personal Access Token](#create-a-github-personal-access-token)
          * [Fork and Clone the Spring Petclinic Application](#fork-and-clone-the-spring-petclinic-application)
          * [Fork and Clone the Workshop Repository](#fork-and-clone-the-workshop-repository)
          * [Use Concourse as the Continuous Integration System](#use-concourse-as-the-continuous-integration-system)
             * [Install Concourse](#install-concourse)
             * [Install Fly CLI](#install-fly-cli)
-            * [Create a Github Personal Access Token](#create-a-github-personal-access-token)
             * [Create Concourse Credentials File](#create-concourse-credentials-file)
             * [Configure and Test the Concourse Pipeline](#configure-and-test-the-concourse-pipeline)
          * [Use TBS to Build the Spring Petclinic Container Image](#use-tbs-to-build-the-spring-petclinic-container-image)
@@ -38,8 +39,8 @@
 
 The goal of this workshop is to combine the [Tanzu Build Service](https://tanzu.vmware.com/build-service) aka TBS (based on the upstream open source system [kpack](https://github.com/pivotal/kpack)) and [buildpacks](https://buildpacks.io) with the [kapp-controller](https://github.com/k14s/kapp-controller), part of the [k14s](https://k14s.io) set of tools, to:
 
-1. Run test on code commited to a testing branch
-1. If the code passes the tests push it to staging
+1. Concourse runs tests on code commited to a testing branch
+1. If the code passes the tests Concourse pushes it to staging
 1. TBS will pick up the changes in the staging branch and build an image 
 1. Kapp-controller will redeploy the application based on that image
 
@@ -99,6 +100,23 @@ Not required but convenient:
 
 * [kubens](https://github.com/ahmetb/kubectx)
 * [Github CLI](https://github.com/cli/cli)
+* [arkade](https://github.com/alexellis/arkade)
+
+#### Install the gh CLI
+
+On Ubuntu:
+
+```
+wget https://github.com/cli/cli/releases/download/v0.11.1/gh_0.11.1_linux_amd64.deb
+sudo dpkg -i gh_0.11.1_linux_amd64.deb
+```
+
+Now `gh` should be available.
+
+```
+$ which gh
+/usr/local/bin/gh
+```
 
 ### Conventions Used
 
@@ -106,6 +124,20 @@ Not required but convenient:
 * `kubectl` is often aliased to `k` for less typing, `alias k=kubectl`
 
 ## Workshop
+
+#### Create a Github Personal Access Token
+
+Go to:
+
+```
+github -> settings -> developer settings -> personal access tokens -> generate new token
+```
+
+Call it something like `pipeline workshop` and give it all "repo" permissions as show below. 
+
+![personal access token settings](/img/personal-access-token-permissions.jpg)
+
+Copy that token as it will be used in the Concourse credentials file as well as with the `gh` CLI.
 
 ### Fork and Clone the Spring Petclinic Application
 
@@ -115,6 +147,12 @@ This assumes you have the github cli, `gh`, installed, but can easily be done fr
 $ gh --version
 gh version 0.11.1 (2020-07-28)
 https://github.com/cli/cli/releases/tag/v0.11.1
+```
+
+Create a Github personal access token and set then environment variable `GITHUB_TOKEN` so that `gh` can use it.
+
+```
+export GITHUB_TOKEN=YOUR_TOKEN
 ```
 
 Fork the repo.
@@ -140,23 +178,6 @@ From https://github.com/spring-projects/spring-petclinic
  * [new branch]      main       -> upstream/main
  * [new branch]      wavefront  -> upstream/wavefront
 ✓ Cloned fork
-```
-
-Clone that fork.
-
-```
-git clone git@github.com:YOUR_GITHUB_USERNAME/spring-petclinic.git
-```
-
-e.g. command:
-
-```
-$ git clone git@github.com:ccollicutt/spring-petclinic.git
-Cloning into 'spring-petclinic'...
-remote: Enumerating objects: 8498, done.
-remote: Total 8498 (delta 0), reused 0 (delta 0), pack-reused 8498
-Receiving objects: 100% (8498/8498), 7.26 MiB | 7.68 MiB/s, done.
-Resolving deltas: 100% (3229/3229), done.
 ```
 
 Change directories into spring-petclinic.
@@ -205,10 +226,6 @@ To github.com:ccollicutt/spring-petclinic.git
 gh repo fork ccollicutt/tanzu-kubernetes-pipeline-demo --clone
 ```
 
-```
-git clone https://github.com/YOUR_GITHUB_USERNAME/tanzu-kubernetes-pipeline-demo
-```
-
 cd into the repository.
 
 ```
@@ -224,6 +241,14 @@ This section of the workshop is loosely based on [this Tanzu blog post](https://
 #### Install Concourse
 
 Ensure that helm version 3 is available.
+
+If you installed `arkade` you can get `helm` with:
+
+```
+ark get helm
+```
+
+This is the version we are using below.
 
 ```
 helm version
@@ -264,6 +289,27 @@ We'd expect to see something like the below in the `values.yml` file after runni
 ```
 $ grep externalUrl concourse/install/values.yml 
     externalUrl: http://concourse.example.com:8080
+```
+
+*NOTE: Ensure that there is a default storage class!*
+
+Create a namespace.
+
+```
+kubectl create ns concourse-install
+```
+
+Setup the Concourse helm chart repository.
+
+```
+helm repo add concourse https://concourse-charts.storage.googleapis.com/
+```
+
+e.g. output:
+
+```
+$ helm repo add concourse https://concourse-charts.storage.googleapis.com/
+"concourse" has been added to your repositories
 ```
 
 Install concourse.
@@ -377,20 +423,6 @@ $ fly --version
 6.4.1
 ```
 
-#### Create a Github Personal Access Token
-
-Go to:
-
-```
-github -> settings -> developer settings -> personal access tokens -> generate new token
-```
-
-Call it something like `pipeline workshop` and give it all "repo" permissions as show below. 
-
-![personal access token settings](/img/personal-access-token-permissions.jpg)
-
-Copy that token as it will be used in the Concourse credentials file.
-
 #### Create Concourse Credentials File
 
 Copy the example file.
@@ -502,18 +534,42 @@ my-dockerhub-creds     https://index.docker.io/v1/
 my-git-ssh-cred        git@github.com
 ```
 
-Create the image.
+```
+kp secret create dockerhub-creds --dockerhub ccollicutttanzu
+```
 
-*NOTE: We're using `main` not `master`.*
+e.g. output:
 
 ```
-kp image create spring-petclinic YOUR_DOCKER_HUB_USER/spring-petclinic --git git@github.com:YOUR_GITHUB_USER/spring-petclinic.git --git-revision main
+$ kp secret create dockerhub-creds --dockerhub ccollicutttanzu
+dockerhub password: 
+"dockerhub-creds" created
+```
+
+Create github ssh key.
+
+```
+kp secret create GIT-SSH-CREDENTIALS --git-url GIT-SSH-URL --git-ssh-key /tmp/PRIVATE-SSH-KEY
 ```
 
 e.g. command:
 
 ```
-kp image create spring-petclinic ccollicutttanzu/spring-petclinic --git git@github.com:ccollicutt/spring-petclinic.git --git-revision main
+kp secret create github-ssh-key --git-url git@github.com --git-ssh-key /home/ubuntu/.ssh/tbs-key
+```
+
+Create the image.
+
+*NOTE: We're using the `testing` branch.*
+
+```
+kp image create spring-petclinic --tag YOUR_DOCKER_HUB_USER/spring-petclinic --git git@github.com:YOUR_GITHUB_USER/spring-petclinic.git --git-revision testing
+```
+
+e.g. command:
+
+```
+kp image create spring-petclinic --tag ccollicutttanzu/spring-petclinic --git git@github.com:ccollicutt-tanzu/spring-petclinic.git --git-revision testing
 ```
 
 Review the logs as the image is being built.
@@ -590,22 +646,20 @@ BUILD    STATUS     IMAGE                                                       
 Take a second to review the Custom Resource Definitions that TBS creates.
 
 ```
-kubectl get crd | grep pivotal | cut -f 1 -d " "
+kubectl get crd | grep kpack | cut -f 1 -d " "
 ```
 
 e.g. output:
 
 ```
-$ kubectl get crd | grep pivotal | cut -f 1 -d " "
-builders.build.pivotal.io
-builds.build.pivotal.io
-clusterbuilders.build.pivotal.io
-custombuilders.experimental.kpack.pivotal.io
-customclusterbuilders.experimental.kpack.pivotal.io
-images.build.pivotal.io
-sourceresolvers.build.pivotal.io
-stacks.experimental.kpack.pivotal.io
-stores.experimental.kpack.pivotal.io
+$ kubectl get crd | grep kpack | cut -f 1 -d " "
+builders.kpack.io
+builds.kpack.io
+clusterbuilders.kpack.io
+clusterstacks.kpack.io
+clusterstores.kpack.io
+images.kpack.io
+sourceresolvers.kpack.io
 ```
 
 ### Use Kapp Controller to Deploy Spring Petclinic Application
@@ -804,6 +858,8 @@ Concourse should pickup that change and run the `maven-test` pipeline.
 #### Watch TBS and Kapp-controller Redeploy the Application
 
 List the TBS builds.
+
+*NOTE: Ensure you are in the same namespace as you were when you created the TBS image.*
 
 ```
 kp build list spring-petclinic
