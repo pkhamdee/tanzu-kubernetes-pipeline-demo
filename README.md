@@ -691,13 +691,13 @@ kubens spring-petclinic
 Now create a serviceaccount.
 
 ```
-kubectl create -f spring-petlinic-kapp-controller/spring-petclinic-kubernetes-manifests/spring-petclinic-sa-ns.yml
+kubectl create -f spring-petclinic-kapp-controller/spring-petclinic-kubernetes-manifests/spring-petclinic-sa-ns.yml
 ```
 
 e.g. output:
 
 ```
-$ kubectl create -f spring-petlinic-kapp-controller/spring-petclinic-kubernetes-manifests/spring-petclinic-sa-ns.yml
+$ kubectl create -f spring-petclinic-kapp-controller/spring-petclinic-kubernetes-manifests/spring-petclinic-sa-ns.yml
 serviceaccount/spring-petclinic-ns-sa created
 role.rbac.authorization.k8s.io/spring-petclinic-ns-role created
 rolebinding.rbac.authorization.k8s.io/spring-petclinic-ns-role-binding created
@@ -706,7 +706,7 @@ rolebinding.rbac.authorization.k8s.io/spring-petclinic-ns-role-binding created
 Finally create the kapp app.
 
 ```
-kubectl create -f spring-petlinic-kapp-controller/spring-petclinic-kubernetes-manifests/spring-petclinic-kapp-controller-app.yml
+kubectl create -f spring-petclinic-kapp-controller/spring-petclinic-kubernetes-manifests/spring-petclinic-kapp-controller-app.yml
 ```
 
 *NOTE: The `spring-petclinic-kapp-controller-app.yml` file is configured to use [this git repo file](https://github.com/ccollicutt/kapp-controller-apps/blob/master/spring-petclinic/config.yml) as the Kubernetes manifest for the Spring Petclinic application.*
@@ -926,13 +926,13 @@ kubectl delete pvc data-concourse-postgresql-0 -n concourse
 Remove kapp-controller config for Spring Petclinic.
 
 ```
-kubectl delete -f spring-petlinic-kapp-controller/spring-petclinic-kubernetes-manifests/spring-petclinic-kapp-controller-app.yml
+kubectl delete -f spring-petclinic-kapp-controller/spring-petclinic-kubernetes-manifests/spring-petclinic-kapp-controller-app.yml
 ```
 
 Remove the serviceaccount.
 
 ```
-kubectl delete -f spring-petlinic-kapp-controller/spring-petclinic-kubernetes-manifests/spring-petclinic-sa-ns.yml
+kubectl delete -f spring-petclinic-kapp-controller/spring-petclinic-kubernetes-manifests/spring-petclinic-sa-ns.yml
 ```
 
 Delete the TBS image.
