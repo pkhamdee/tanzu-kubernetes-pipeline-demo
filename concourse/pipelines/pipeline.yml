@@ -22,7 +22,7 @@ resources:
     type: git
     source:
       uri: ((test-scripts-repo-uri))
-      branch: with-concourse
+      branch: master
 
 jobs:
 
