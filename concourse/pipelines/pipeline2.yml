@@ -96,8 +96,6 @@ jobs:
           - build-and-analyze
         trigger: true
 
-      - get: spring-petclinic-staging-branch
-
       - get: test-scripts
 
       - task: run-mvn-test
