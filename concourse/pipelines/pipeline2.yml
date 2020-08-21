@@ -81,6 +81,7 @@ jobs:
           run:
             path: test-scripts/concourse/test-scripts/build.sh
           caches:
+            # This is linked in the build script to $HOME/.m2
             - path: maven
 
       - put: code-analysis
@@ -151,7 +152,10 @@ jobs:
             - name: test-scripts
           run:
             path: test-scripts/concourse/test-scripts/integration-test.sh
-
+          caches:
+            # This is linked in the build script to $HOME/.m2
+            - path: maven
+            
       - put: spring-petclinic-staging-branch
         params:
           repository: spring-petclinic-testing-branch
