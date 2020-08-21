@@ -36,16 +36,6 @@ resources:
       login: ((sonar-authtoken))
       organization: ((sonar-organization))
 
-  # - name: minio-s3
-  #   type: s3
-  #   source:
-  #     access_key_id: myaccesskey
-  #     disable_ssl: true
-  #     bucket: artifacts
-  #     #region_name: ((s3.region_name))
-  #     endpoint: minio-1598019654.concourse-install.svc.cluster.local
-  #     secret_access_key: mysecretaccesskey
-
 resource_types:  
 
   - name: sonar-runner
@@ -124,6 +114,9 @@ jobs:
             - name: test-scripts
           run:
             path: test-scripts/concourse/test-scripts/unit-test.sh
+          caches:
+            # This is linked in the build script to $HOME/.m2
+            - path: maven
 
   - name: integration-test
     public: true
@@ -152,10 +145,7 @@ jobs:
             - name: test-scripts
           run:
             path: test-scripts/concourse/test-scripts/integration-test.sh
-          caches:
-            # This is linked in the build script to $HOME/.m2
-            - path: maven
-            
+
       - put: spring-petclinic-staging-branch
         params:
           repository: spring-petclinic-testing-branch
