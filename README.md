@@ -11,7 +11,7 @@
          * [Tested Software and Versions](#tested-software-and-versions)
             * [Install the gh CLI](#install-the-gh-cli)
          * [Conventions Used](#conventions-used)
-      * [Workshop](#workshop)
+      * [Workshop Part 1](#workshop-part-1)
          * [Create a Github Personal Access Token](#create-a-github-personal-access-token)
          * [Fork and Clone the Spring Petclinic Application](#fork-and-clone-the-spring-petclinic-application)
          * [Fork and Clone the Workshop Repository](#fork-and-clone-the-workshop-repository)
@@ -31,8 +31,12 @@
          * [All Together Now!](#all-together-now)
             * [Update Spring Petclinic Code and Let Concourse Run Tests](#update-spring-petclinic-code-and-let-concourse-run-tests)
             * [Watch TBS and Kapp-controller Redeploy the Application](#watch-tbs-and-kapp-controller-redeploy-the-application)
-      * [Conclusion](#conclusion)
-      * [Clean Up](#clean-up)
+         * [Conclusion](#conclusion)
+      * [Workshop Part 2](#workshop-part-2)
+         * [Configure Sonarqube Cloud Access](#configure-sonarqube-cloud-access)
+         * [Configure the Second Pipeline](#configure-the-second-pipeline)
+      * [Clean Up Workshop Part 1](#clean-up-workshop-part-1)
+      * [Cleanup Workshop Part 2](#cleanup-workshop-part-2)
 <!--te-->
 
 ## Overview
@@ -123,7 +127,9 @@ $ which gh
 * `SNIP!` - Some output removed for brevity
 * `kubectl` is often aliased to `k` for less typing, `alias k=kubectl`
 
-## Workshop
+## Workshop Part 1
+
+In this part of the workshop we'll build a basic pipeline that will run Maven tests on Spring Petclinic, and if it passes the tests, merges the testing branch onto staging, where TBS and Kapp-controller will pick it up and redeploy.
 
 ### Create a Github Personal Access Token
 
@@ -221,6 +227,8 @@ To github.com:ccollicutt/spring-petclinic.git
 ```
 
 ### Fork and Clone the Workshop Repository
+
+This command will fork the workshop repository into your github account.
 
 ```
 gh repo fork ccollicutt/tanzu-kubernetes-pipeline-demo --clone
@@ -899,13 +907,48 @@ $ curl -s 10.3.1.147:8080  | grep -i welcome
     <h2>Welcome TBS and Kapp-controller</h2>
 ```
 
-## Conclusion
+### Conclusion
 
 In this demo we have set up Concourse, TBS, and Kapp-controller such that when a commit is made to Spring Petclinic on the testing branch it's tested, and if the tests pass merged onto staging, at which point a new image will be built and deployed automatically.
 
 In real world production situations it's unlikely that the "latest" tag would be used to determine what is in production and the Spring Petclinic Kubernetes manifest would be updated with a specific, likely immutable, image tag. But, this workshop was not meant to mimic real-world situations, and instead give a basic introduction to TBS and Kapp-controller working together to deploy an application into Kubernetes.
 
-## Clean Up
+## Workshop Part 2
+
+In this workshop we will extend Workshop 1 and add:
+
+1. Sonarqube cloud integration 
+
+### Configure Sonarqube Cloud Access
+
+If you don't have an account on [Sonarcloud](https://sonarcloud.io) sign up for one and then create a new organization. Chose your github account as the organization and add the forked Spring Petclinic repo in your github account.
+
+Select the Spring Petclinic project from within Sonar Cloud. Then;
+
+```
+Administration -> Analysis Method -> Other CI -> Maven
+```
+
+The page will now show all the information needed to configure Concourse to use Sonarcloud to analyze Spring Petclinic as part of a `build-and-analyze` phase.
+
+### Configure the Second Pipeline
+
+Edit the credenials file and add the Sonar token and organization name(oragnization should be your github user name) that were provided above.
+
+Now create a second pipeline.
+
+```
+fly -t demo set-pipeline -c concourse/pipelines/pipeline2.yml -p petclinic-tests2 -l concourse/pipelines/credentials.yml
+```
+
+```
+fly -t demo unpause-pipeline -p petclinic-tests2
+```
+
+The pipeline should run.
+
+
+## Clean Up Workshop Part 1
 
 Delete the concourse install.
 
@@ -968,6 +1011,7 @@ kubectl delete ns spring-petclinic
 
 Delete your Spring Petclinic fork from github.
 
+## Cleanup Workshop Part 2
 
-
+TBD
 
