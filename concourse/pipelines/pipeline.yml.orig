@@ -1,0 +1,57 @@
+---
+
+resources:
+
+  - name: spring-petclinic-testing-branch
+    type: git
+    source:
+      uri: ((spring-petclinic-repo-uri))
+      icon: github
+      branch: testing
+
+  - name: spring-petclinic-staging-branch
+    type: git
+    source:
+      uri: ((spring-petclinic-repo-uri))
+      icon: github
+      branch: staging
+      username: ((github-apptoken))
+      password: x-oauth-basic
+
+  - name: test-scripts
+    type: git
+    source:
+      uri: ((test-scripts-repo-uri))
+      branch: with-concourse
+
+jobs:
+
+  - name: maven-test
+    public: true
+    serial: true
+    plan:
+      - get: spring-petclinic-testing-branch
+        trigger: true
+
+      - get: spring-petclinic-staging-branch
+
+      - get: test-scripts
+
+      - task: run-mvn-test
+        config:
+          platform: linux
+          image_resource:
+            type: docker-image
+            source: 
+              repository: maven
+              tag: 3-jdk-11-openj9
+          inputs:
+            - name: spring-petclinic-testing-branch
+            - name: test-scripts
+          run:
+            path: test-scripts/concourse/test-scripts/unit-test.sh
+        on_success:
+          do:
+            - put: spring-petclinic-staging-branch
+              params:
+                repository: spring-petclinic-testing-branch

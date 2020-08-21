@@ -11,4 +11,7 @@ echo "Generating symbolic links for caches"
 
 [[ -d "${M2_CACHE}" && ! -d "${M2_HOME}" ]] && ln -s "${M2_CACHE}" "${M2_HOME}"
 
+
+cd spring-petclinic-testing-branch
+
 mvn clean install
