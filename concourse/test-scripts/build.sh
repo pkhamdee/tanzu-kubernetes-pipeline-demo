@@ -14,4 +14,5 @@ echo "Generating symbolic links for caches"
 
 cd spring-petclinic-testing-branch
 
-mvn clean install
+# skipt the tests
+mvn clean install -DskipTests
