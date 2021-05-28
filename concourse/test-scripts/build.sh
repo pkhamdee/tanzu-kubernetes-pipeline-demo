@@ -16,4 +16,4 @@ cd spring-petclinic-testing-branch
 
 # skipt the tests
 #mvn clean install -DskipTests
-mvn clean verify sonar:sonar sonar-quality-gate:check  -Dsonar.login=${login} -Dsonar.host.url=${url}
+mvn clean install -DskipTests sonar:sonar sonar-quality-gate:check  -Dsonar.login=${login} -Dsonar.host.url=${url}
