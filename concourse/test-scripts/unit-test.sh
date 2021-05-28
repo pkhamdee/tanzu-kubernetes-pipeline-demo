@@ -11,6 +11,7 @@ echo "Generating symbolic links for caches"
 
 cd spring-petclinic-testing-branch
 
-mvn test
+#Run below to execute only Unit Tests
+mvn clean test
 
 exit 0

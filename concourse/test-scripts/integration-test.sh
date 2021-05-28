@@ -2,6 +2,7 @@
 
 cd spring-petclinic-testing-branch
 
-# do nothing 
+# run only Integration Tests
+mvn failsafe:integration-test
 
 exit 0
